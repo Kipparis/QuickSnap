@@ -32,6 +32,8 @@ public class TargetCamera : MonoBehaviour {
     public Shot[] playerShots;
     public float[] playerRatings;
 
+    public RawImage whiteOut;
+
     void Awake() {
         S = this;
     }
@@ -46,8 +48,12 @@ public class TargetCamera : MonoBehaviour {
 
         go = GameObject.Find("_Check_64");
         checkMark = go.GetComponent<RawImage>();
-        // Прячем марку
+        go = GameObject.Find("WhiteOut");
+        whiteOut = go.GetComponent<RawImage>();
+
+        // Прячем марку и вспышку
         checkMark.enabled = false;
+        whiteOut.enabled = false;
 
         // Загружаем все снимки из PlayerPrefs
         Shot.LoadShots();
@@ -106,7 +112,15 @@ public class TargetCamera : MonoBehaviour {
                 lastShot = sh;
                 playerShots[shotNum] = sh;
                 playerRatings[shotNum] = acc;
+
+                // Показываем снимок только что сделанный игроком
+                ShowShot(sh);
+                // Возвращаем текущий симок через 1 секунду
+                Invoke("ShowCurrentShot", 1);
             }
+
+            // Играем звук затвора
+            this.GetComponent<AudioSource>().Play();
 
             // Ставим _TargetCamera для показания Shot
             // ShowShot(sh);
@@ -170,9 +184,21 @@ public class TargetCamera : MonoBehaviour {
     }
 
     public void ShowShot(Shot sh) {
+        // Вызываем WhiteOutTargetWindow() и даём ему делать тайминги самому себе
+        StartCoroutine(WhiteOutTargetWindow());
         // Ставим _TargetCamera
         transform.position = sh.position;
         transform.rotation = sh.rotation;
+    }
+
+    public void ShowCurrentShot() {
+        ShowShot(Shot.shots[shotNum]);
+    }
+
+    public IEnumerator WhiteOutTargetWindow() {
+        whiteOut.enabled = true;
+        yield return new WaitForSeconds(0.05f);
+        whiteOut.enabled = false;
     }
 
     // OnDrawGizmos() вызывается в любое время когда Gizmos должны быть нарисованны,
